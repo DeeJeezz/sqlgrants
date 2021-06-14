@@ -9,7 +9,7 @@ setup(
     python_requires='>=3.9',
     install_requires=[
         'SQLAlchemy~=1.4.15',
-        'mysql-connector-python'
+        'mysql-connector-python',
+        'python-dotenv~=0.17.1'
     ]
 )
-
