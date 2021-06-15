@@ -4,6 +4,9 @@ from collections import namedtuple
 
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import ProgrammingError
+
+from .exceptions import AccessDenied
 
 RE_GRANT = re.compile(r'GRANT (?P<privileges>.*) ON (?P<schema>\S*)\.(?P<table>\S*)')
 
@@ -42,6 +45,11 @@ class MySQLGrant:
             with Session(self._engine) as session:
                 query = session.execute(f'SHOW GRANTS FOR {self._username}')
                 return query.all()
+        except ProgrammingError as e:
+            if (e.orig.errno == 1044):
+                raise AccessDenied(e.orig.msg)
+            else:
+                raise e
         except Exception as e:
             raise e
 
