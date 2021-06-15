@@ -1,20 +1,17 @@
 import enum
 import re
 from collections import namedtuple
-# from pprint import pprint
 
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.orm import Session
-
-from config import user_engine
 
 RE_GRANT = re.compile(r'GRANT (?P<privileges>.*) ON (?P<schema>\S*)\.(?P<table>\S*)')
 
 
 class GrantLevel(enum.Enum):
-    GLOBAL = enum.auto()
-    SCHEMA = enum.auto()
     TABLE = enum.auto()
+    SCHEMA = enum.auto()
+    GLOBAL = enum.auto()
 
 
 class Privileges(enum.Enum):
@@ -24,6 +21,9 @@ class Privileges(enum.Enum):
     SELECT = 'SELECT'
     UPDATE = 'UPDATE'
     USAGE = 'USAGE'
+
+    def __repr__(self):
+        return self.value
 
 
 Grants = namedtuple('Grants', ['privileges', 'schema', 'table'])
@@ -65,38 +65,17 @@ class MySQLGrant:
 
     def check_permissions(self, schema: str = '*', table: str = '*') -> set:
         result = set()
-        grant: Grants
-        for grant in self._grants[GrantLevel.TABLE]:
-            if grant.schema in ('*', schema) and grant.table in ('*', table):
-                set.update(result, grant.privileges)
 
-        for grant in self._grants[GrantLevel.SCHEMA]:
-            if grant.schema in ('*', schema) and grant.table in ('*', table):
-                set.update(result, grant.privileges)
+        for grant_level in GrantLevel:
+            grant: Grants
+            for grant in self._grants[grant_level]:
+                if grant.schema in ('*', schema) and grant.table in ('*', table):
+                    set.update(result, [Privileges(p) for p in grant.privileges])
 
-        for grant in self._grants[GrantLevel.GLOBAL]:
-            if grant.schema in ('*', schema) and grant.table in ('*', table):
-                set.update(result, grant.privileges)
-
-        if 'ALL PRIVILEGES' in result:
-            return {'ALL PRIVILEGES'}
+        if Privileges.ALL in result:
+            return {Privileges.ALL}
 
         if len(result) > 1:
-            result.discard('USAGE')
+            result.discard(Privileges.USAGE)
 
         return result
-
-
-def main():
-    grants = MySQLGrant(user_engine)
-    # pprint(grants._grants)
-
-    print()
-    print('Grants on test.*', grants.check_permissions('test'), sep='\t')
-    print('Grants on test.test_table', grants.check_permissions('test', 'test_table'), sep='\t')
-    print('Grants on test2.*', grants.check_permissions('test2'), sep='\t')
-    print('Grants on test2.test_table', grants.check_permissions('test2', 'test_table'), sep='\t')
-
-
-if __name__ == "__main__":
-    main()
