@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='python-SQLGrants',
-    version='1.0.0',
+    version='1.0.1',
     packages=find_packages(),
     description='Grants processing library',
     author='Vadim Meshcheryakov',
