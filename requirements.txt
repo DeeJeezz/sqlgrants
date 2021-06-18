@@ -1,2 +1,0 @@
-SQLAlchemy~=1.4.15
-mysql-connector-python
