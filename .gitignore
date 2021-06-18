@@ -5,3 +5,6 @@ __pycache__/
 .flake8
 docker-compose.yaml
 requirements.txt
+.eggs/
+python_*.egg-info/
+dist/
