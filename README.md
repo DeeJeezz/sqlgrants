@@ -1,5 +1,9 @@
 # SQL Grants library
-
+## Install
+```bash
+pip install python-sqlgrants
+```
+## Usage
 ```python
 from sqlgrants.mysql import MySQL, GrantType
 
