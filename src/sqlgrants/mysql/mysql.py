@@ -2,6 +2,7 @@ import re
 from typing import Set
 
 from sqlgrants.base import BaseDatabase
+from sqlgrants.exceptions import NotFoundError
 from .grants import GrantLevel, Grants, GrantType
 
 
@@ -30,7 +31,6 @@ class MySQL(BaseDatabase):
                     level = GrantLevel.GLOBAL
 
                 grants[level].append(Grants(privileges, schema, table))
-
         return grants
 
     def _show_grants(self, username: str, host: str) -> dict:
@@ -44,7 +44,7 @@ class MySQL(BaseDatabase):
         for grant_level in GrantLevel:
             for grant in grants[grant_level]:
                 if grant.schema in ('*', schema) and grant.table in ('*', table):
-                    set.update(result, [GrantType(p) for p in grant.privileges])
+                    set.update(result, [GrantType(p) for p in grant.privileges if p in GrantType.__members__])
 
         if GrantType.ALL in result:
             return {GrantType.ALL}
@@ -56,13 +56,13 @@ class MySQL(BaseDatabase):
 
     def grant(self, grants: Set[GrantType], *, username: str = '', host: str = '%', schema: str = '*',
               table: str = '*') -> None:
-        grant_types: str = ', '.join({grant_type.name for grant_type in grants})
+        grant_types: str = ', '.join({grant_type.value for grant_type in grants})
         sql: str = f'GRANT {grant_types} ON {schema}.{table} TO \'{username or self._login}\'@\'{host}\''
         self.execute(sql)
 
     def revoke(self, grants: Set[GrantType], *, username: str = '', host: str = '%', schema: str = '*',
                table: str = '*') -> None:
-        grant_types: str = ', '.join({grant_type.name for grant_type in grants})
+        grant_types: str = ', '.join({grant_type.value for grant_type in grants})
         sql: str = f'REVOKE {grant_types} ON {schema}.{table} FROM \'{username or self._login}\'@\'{host}\''
         self.execute(sql)
 
@@ -75,9 +75,13 @@ class MySQL(BaseDatabase):
     def tables_grants(self, username: str, host: str, schema: str = '', table: str = ''):
         user = {'username': username, 'host': host}
         result: dict = self._schemas_dict(schema)
+        if schema and not result:
+            raise NotFoundError(f'schema \'{schema}\' not found')
         for _schema in self.schemas:
             if _schema.name in result:
                 if not _schema.tables:
+                    if table:
+                        raise NotFoundError(f'table \'{table}\' not found')
                     grants = self.show_grants(schema=_schema.name, **user)
                     result[_schema.name]['*'] = grants
                     continue
