@@ -16,3 +16,7 @@ class ConnectionRefused(SQLAlchemyExceptionMixin, DBAPIError):
 
 class BadRequest(SQLAlchemyExceptionMixin, DBAPIError):
     pass
+
+
+class NotFoundError(Exception):
+    pass
