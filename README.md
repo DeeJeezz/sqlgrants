@@ -1,3 +1,5 @@
+[![codecov](https://codecov.io/gh/painassasin/sqlgrants/branch/main/graph/badge.svg?token=8SH0DBNPTX)](https://codecov.io/gh/painassasin/sqlgrants)
+
 # SQL Grants library
 ## Install
 ```bash
