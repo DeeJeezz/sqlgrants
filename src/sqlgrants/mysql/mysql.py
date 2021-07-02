@@ -1,13 +1,14 @@
 import re
-from typing import Set, Optional
+from typing import Optional, Set
 
 from sqlalchemy import create_engine
 from sqlalchemy.engine.base import Engine
-from sqlalchemy.exc import ProgrammingError, DatabaseError
-from sqlalchemy.orm import Session, Query
+from sqlalchemy.exc import DatabaseError, ProgrammingError
+from sqlalchemy.orm import Query, Session
 
-from sqlgrants.exceptions import AccessDenied, ConnectionRefused, BadRequest
-from .grants import Grants, GrantType, GrantLevel
+from sqlgrants.exceptions import AccessDenied, BadRequest, ConnectionRefused
+
+from .grants import GrantLevel, Grants, GrantType
 
 
 class MySQL:
