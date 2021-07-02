@@ -1,49 +1,17 @@
 import re
-from typing import Optional, Set
+from typing import Set
 
-from sqlalchemy import create_engine
-from sqlalchemy.engine.base import Engine
-from sqlalchemy.exc import DatabaseError, ProgrammingError
-from sqlalchemy.orm import Query, Session
-
-from sqlgrants.exceptions import AccessDenied, BadRequest, ConnectionRefused
-
+from sqlgrants.base import BaseDatabase
 from .grants import GrantLevel, Grants, GrantType
 
 
-class MySQL:
-    DIALECT = 'mysql'
-    DRIVER = 'mysqlconnector'
-    DEFAULT_SCHEMA = 'information_schema'
+class MySQL(BaseDatabase):
     RE_GRANT = re.compile(r'GRANT (?P<privileges>.*) ON (?P<schema>\S*)\.(?P<table>\S*)')
 
     def __init__(self, login: str, password: str, host: str = '127.0.0.1', port: int = 3306):
+        super().__init__('mysql', 'mysqlconnector', 'information_schema')
         self._login = login
-        self._engine: Engine = self._create_engine(login, password, host, port)
-
-    def _create_engine(self, login: str, password: str, host: str, port: int) -> Engine:
-        url: str = f'{self.DIALECT}+{self.DRIVER}://{login}:{password}@{host}:{port}/{self.DEFAULT_SCHEMA}'
-        return create_engine(url)
-
-    def _execute(self, sql: str) -> Optional[list]:
-        try:
-            with Session(self._engine) as session:
-                query: Query = session.execute(sql)
-                if query.returns_rows:
-                    return query.all()
-        except ProgrammingError as e:
-            err_number = e.orig.errno
-            if err_number == 1044:
-                raise AccessDenied(e)
-            elif err_number == 1141:
-                raise BadRequest(e)
-            raise e
-        except DatabaseError as e:
-            raise ConnectionRefused(e)
-
-    def _show_grants(self, username: str, host: str) -> dict:
-        data: list = self._execute(f'SHOW GRANTS FOR \'{username}\'@\'{host}\'')
-        return self._process_grant_list(data)
+        self.engine = self._create_engine_url(login, password, host, port)
 
     def _process_grant_list(self, grant_list: list) -> dict:
         grants = {key: [] for key in GrantLevel}
@@ -64,6 +32,10 @@ class MySQL:
                 grants[level].append(Grants(privileges, schema, table))
 
         return grants
+
+    def _show_grants(self, username: str, host: str) -> dict:
+        data: list = self.execute(f'SHOW GRANTS FOR \'{username}\'@\'{host}\'')
+        return self._process_grant_list(data)
 
     def show_grants(self, *, username: str = '', host: str = '%', schema: str = '*', table: str = '*') -> set:
         grants = self._show_grants(username or self._login, host)
@@ -86,10 +58,32 @@ class MySQL:
               table: str = '*') -> None:
         grant_types: str = ', '.join({grant_type.name for grant_type in grants})
         sql: str = f'GRANT {grant_types} ON {schema}.{table} TO \'{username or self._login}\'@\'{host}\''
-        self._execute(sql)
+        self.execute(sql)
 
     def revoke(self, grants: Set[GrantType], *, username: str = '', host: str = '%', schema: str = '*',
                table: str = '*') -> None:
         grant_types: str = ', '.join({grant_type.name for grant_type in grants})
         sql: str = f'REVOKE {grant_types} ON {schema}.{table} FROM \'{username or self._login}\'@\'{host}\''
-        self._execute(sql)
+        self.execute(sql)
+
+    def _schemas_dict(self, schema: str = '') -> dict:
+        if schema:
+            return {_schema.name: dict() for _schema in self.schemas if _schema.name == schema}
+        else:
+            return {_schema.name: dict() for _schema in self.schemas}
+
+    def tables_grants(self, username: str, host: str, schema: str = '', table: str = ''):
+        user = {'username': username, 'host': host}
+        result: dict = self._schemas_dict(schema)
+        for _schema in self.schemas:
+            if _schema.name in result:
+                if not _schema.tables:
+                    grants = self.show_grants(schema=_schema.name, **user)
+                    result[_schema.name]['*'] = grants
+                    continue
+                for _table in _schema.tables:
+                    if table and _table.name != table:
+                        continue
+                    grants = self.show_grants(schema=_table.schema, table=_table.name, **user)
+                    result[_table.schema][_table.name] = grants
+        return result
