@@ -1,7 +1,6 @@
 import mock
-
 from sqlgrants.base import Schema, Table
-from sqlgrants.mysql import MySQL, GrantType
+from sqlgrants.mysql import GrantType, MySQL
 from sqlgrants.mysql.grants import GrantLevel, Grants
 
 

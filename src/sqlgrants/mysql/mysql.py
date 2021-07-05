@@ -3,6 +3,7 @@ from typing import Set
 
 from sqlgrants.base import BaseDatabase
 from sqlgrants.exceptions import NotFoundError
+
 from .grants import GrantLevel, Grants, GrantType
 
 
