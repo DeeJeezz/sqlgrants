@@ -44,7 +44,7 @@ class MySQL(BaseDatabase):
         for grant_level in GrantLevel:
             for grant in grants[grant_level]:
                 if grant.schema in ('*', schema) and grant.table in ('*', table):
-                    set.update(result, [GrantType(p) for p in grant.privileges if p in GrantType.__members__])
+                    set.update(result, [GrantType(p) for p in grant.privileges if p in GrantType.values()])
 
         if GrantType.ALL in result:
             return {GrantType.ALL}

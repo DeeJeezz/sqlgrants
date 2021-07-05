@@ -40,14 +40,14 @@ class GrantType(enum.Enum):
     USAGE = 'USAGE'
 
     @classmethod
-    def values(cls) -> list:
+    def values(cls) -> list:  # pragma: no cover
         return [key.value for key in cls]
 
     @classmethod
-    def names(cls) -> list:
+    def names(cls) -> list:  # pragma: no cover
         return [key.name for key in cls]
 
-    def __repr__(self):
+    def __repr__(self):  # pragma: no cover
         return self.value
 
 
@@ -56,5 +56,5 @@ class GrantLevel(enum.Enum):
     SCHEMA = enum.auto()
     GLOBAL = enum.auto()
 
-    def __repr__(self):
+    def __repr__(self):  # pragma: no cover
         return f'<{self.__class__.__name__}: {self.name}>'
