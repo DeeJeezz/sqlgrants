@@ -34,14 +34,14 @@ class BaseDatabase:
                 query: Query = session.execute(sql)
                 if query.returns_rows:
                     return query.all()
-        except ProgrammingError as e:
+        except ProgrammingError as e:  # pragma: no cover
             err_number = e.orig.errno
             if err_number == 1044:
                 raise AccessDenied(e)
             elif err_number == 1141:
                 raise BadRequest(e)
             raise e
-        except DatabaseError as e:
+        except DatabaseError as e:  # pragma: no cover
             raise ConnectionRefused(e)
 
     @property

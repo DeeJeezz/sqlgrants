@@ -1,2 +1,2 @@
-from .grants import GrantType  # noqa F401
-from .mysql import MySQL  # noqa F401
+from .grants import GrantType
+from .mysql import MySQL

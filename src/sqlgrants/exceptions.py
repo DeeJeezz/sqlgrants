@@ -2,7 +2,7 @@ from sqlalchemy.exc import DBAPIError
 
 
 class SQLAlchemyExceptionMixin:
-    def __init__(self, e: DBAPIError):
+    def __init__(self, e: DBAPIError):  # pragma: no cover
         super().__init__(e.statement, e.params, e.orig)
 
 
