@@ -1,5 +1,5 @@
 from collections import namedtuple
-from typing import Optional
+from typing import Optional, List
 
 from sqlalchemy import create_engine
 from sqlalchemy.engine.base import Engine
@@ -35,7 +35,7 @@ class BaseDatabase:
                 if query.returns_rows:
                     return query.all()
         except ProgrammingError as e:  # pragma: no cover
-            err_number = e.orig.errno
+            err_number: int = e.orig.errno
             if err_number == 1044:
                 raise AccessDenied(e)
             elif err_number == 1141:
@@ -45,12 +45,12 @@ class BaseDatabase:
             raise ConnectionRefused(e)
 
     @property
-    def schemas(self) -> list:
-        schemas: list = self.execute('SHOW DATABASES')
+    def schemas(self) -> List["Schema"]:
+        schemas: Optional[list] = self.execute('SHOW DATABASES')
         return [Schema(schema[0], self) for schema in schemas]
 
 
-Table = namedtuple('Table', ['name', 'schema'])
+Table: namedtuple = namedtuple('Table', ['name', 'schema'])
 
 
 class Schema:
@@ -60,6 +60,6 @@ class Schema:
         self._db: BaseDatabase = db
 
     @property
-    def tables(self):
-        tables: list = self._db.execute(f'SHOW TABLES FROM {self.name}')
+    def tables(self) -> List[Table]:
+        tables: Optional[list] = self._db.execute(f'SHOW TABLES FROM {self.name}')
         return [Table(name=table[0], schema=self.name) for table in tables]

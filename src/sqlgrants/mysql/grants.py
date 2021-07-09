@@ -1,7 +1,7 @@
 import enum
 from collections import namedtuple
 
-Grants = namedtuple('Grants', ['privileges', 'schema', 'table'])
+Grants: namedtuple = namedtuple('Grants', ['privileges', 'schema', 'table'])
 
 
 class GrantType(enum.Enum):
